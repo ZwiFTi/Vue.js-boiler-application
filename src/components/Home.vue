@@ -39,13 +39,19 @@ export default {
     this.fetchMovies(); 
   }, 
   methods: { 
-    async fetchMovies() { 
+    async fetchMovies() {
+      const token = window.localStorage.getItem('auth');
       return axios({ 
         method: 'get',
         url: 'http://localhost:8081/movies', 
+        headers: {
+          Authorization: `JWT ${token}`,
+          'Content-type': 'application/json'
+        },
         })
         .then((response) => { 
-          this.movies = response.data.movies; 
+          this.movies = response.data.movies;
+          this.current_user = response.data.current_user; 
         }) 
         .catch(() => { 
         }); 
