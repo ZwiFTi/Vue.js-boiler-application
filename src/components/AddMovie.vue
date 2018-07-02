@@ -77,7 +77,7 @@ export default {
                         release_year: this.release_year, 
                         genre: this.genre, 
                     }, 
-                    url: 'http://localhost:8081/movies', 
+                    url: '/movies', 
                     headers: { 
                         'Content-Type': 'application/json', 
                     }, 
@@ -96,9 +96,10 @@ export default {
                         'Oh no!',
                         'Could not add the movie!',
                         'error',
-                    )
+                    );
                 }); 
-            } return true;  
+            } 
+            return true;  
         }, 
         clear() { 
             this.$refs.form.reset(); 

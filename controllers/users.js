@@ -1,4 +1,7 @@
 const User = require('../models/User.js');
+//const config = require('./../config/Config');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 
 const passportJWT = require('passport-jwt');
 const jwt = require('jsonwebtoken'); 
@@ -9,58 +12,60 @@ jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeaderWithScheme('jwt');
 jwtOptions.secretOrKey = 'thisisthesecretkey';
 
 module.exports.controller = (app) => { 
-    // register a user 
-    app.post('/users/register', (req, res) => { 
-        const name = req.body.name; 
-        const email = req.body.email; 
-        const password = req.body.password; 
-        const newUser = new User({
-            name, 
-            email, 
-            password, 
-        }); 
-        User.createUser(newUser, (error, user) => { 
-            if (error) { 
-                res.status(422).json({
-                    message: 'Something went wrong. Please try again after some time!',
+    // local strategy
+    passport.use(new LocalStrategy({
+        usernameField: 'email',
+        passwordField: 'password'
+    }, (email, password, done) => {
+        User.getUserByEmail (email, (err, user) => {
+            if (err)  { return done(err); }
+            if (!user) {return done(null, false); }
+            User.comparePassword(password, user.password, (error, isMatch) => {
+                if(isMatch) {
+                    return done(null, user);
+                }
+                return done(null, false);
                 });
-            }
-            res.send({ user }); 
-        }); 
-    });
+                return true;
+            });
+        }));
+    
+        // user login
+        app.post('/users/login',
+            passport.authenticate('local', { failureRedirect: 'users/login' }),
+            (req, res) => {
+                res.redirect('/');
+            });
 
-    // login a user
-    // 1. Checks if user with email exists (false -> 404)
-    // 2. Compare password (false match -> error response)
-    // 3. Event that everything is fine:
-    //    - Signs the user's payload with the JWT signature
-    //    - Generates a token
-    //    - Responds with that token
-    app.post('/users/login', (req, res) => { 
-        if (req.body.email && req.body.password) { 
-            const email = req.body.email; 
-            const password = req.body.password; 
-            User.getUserByEmail(email, (err, user) => { 
-                if (!user) { 
-                    res.status(404).json({ 
-                        message: 'The user does not exist!' 
-                    }); 
-                } else { 
-                    User.comparePassword(password, user.password, (error, isMatch) => { 
-                        if (error) throw error; 
-                        if (isMatch) { 
-                            const payload = { 
-                                id: user.id 
-                            }; 
-                            const token = jwt.sign(payload, jwtOptions.secretOrKey); 
-                            res.json({ message: 'ok', token }); 
-                        } else { 
-                            res.status(401).json({ message: 'The password is incorrect!' 
-                        });
-                        }
+            passport.serializeUser((user, done) => {
+                done(null, user.id);
+            });
+
+            passport.deserializeUser((id, done) => {
+                User.findById(id, (err, user) => {
+                    done(err, user)
+                });
+            });
+
+         // register a user
+         app.post('/users/register', (req, res) => {
+            const fullname = req.body.fullname;
+            const email = req.body.email;            
+            const password = req.body.password;
+            const role = req.body.role || 'user';
+            const newUser = new User ({
+                email: email,
+                fullname: fullname,
+                role: role,
+                password: password
+            })
+            User.createUser(newUser, (error, user) => {
+                if (error) {
+                    res.status(422).json({
+                        message: "Something went wrong. Please try again after some time!"
                     });
                 }
+                res.send({ user: user })
             });
-        }
-    });
+        });
 };

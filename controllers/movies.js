@@ -1,11 +1,9 @@
 const MovieSchema = require('../models/Movie.js');
-const Movie = require("../models/Movie"); 
 const Rating = require("../models/Rating");
-const passport = require('passport');
 
 module.exports.controller = (app) => { 
     // fetch all movies
-    app.get('/movies', passport.authenticate('jwt', { session: false }), (req, res) => {
+    app.get('/movies', (req, res) => {
         MovieSchema.find({}, 'name description release_year genre', (error,
         movies) => {
             if (error) { console.log(error) }
@@ -42,13 +40,13 @@ module.exports.controller = (app) => {
 
     // rate a movie
     app.post('/movies/rate/:id', (req, res) => { 
-        const rating = new Rating({ 
+        const newRating = new Rating({ 
             movie_id: req.params.id, 
             user_id: req.body.user_id, 
             rate: req.body.rate, 
         }) 
         
-        rating.save(function (error, rating) { 
+        newRating.save(function (error, rating) { 
             if (error) { console.log(error); } 
             res.send({ 
                 movie_id: rating.movie_id, 

@@ -22,7 +22,8 @@
 
 
 <script> 
-import axios from 'axios'; 
+import axios from 'axios';
+import bus from "./../bus.js";
 
 export default { 
     data: () => ({
@@ -32,7 +33,10 @@ export default {
         emailRules: [ 
             v => !!v || 'E-mail is required', 
             v => /\S+@\S+\.\S+/.test(v) || 'E-mail must be valid', 
-        ], 
+        ],
+        passwordRules: [
+            (v) => !!v || 'Password is required',
+        ] 
     }), 
     methods: { 
         async submit() {
@@ -40,32 +44,35 @@ export default {
             // and responds with the correct message, which is
             // displayed in the UI
             // success -> redirect user to home page
-            return axios({ 
-                method: 'post', 
-                data: { 
-                    email: this.email, 
-                    password: this.password, 
-                }, 
-                url: 'http://localhost:8081/users/login', 
-                headers: { 
-                    'Content-Type': 'application/json', 
-                }, 
-            })
-            .then((response) => { 
-                window.localStorage.setItem('auth', response.data.token); 
-                this.$swal('Great!', 'You are ready to start!', 'success'); 
-                this.$router.push({ name: 'Home' }); 
-            })
-            .catch((error) => { 
-                const message = error.response.data.message;
-                this.$swal('Oh oo!', `${message}`, 'error'); 
-                this.$router.push({ name: 'Login' }); 
-            }); 
+            if (this.$refs.form.validate()) {
+                return axios({ 
+                    method: 'post', 
+                    data: { 
+                        email: this.email, 
+                        password: this.password, 
+                    }, 
+                    url: '/users/login', 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                    }, 
+                })
+                .then((response) => { 
+                    localStorage.setItem('jwtToken', response.data.token); 
+                    this.$swal('Good job!', 'You are ready to start!', 'success');
+                    bus.$emit("refreshUser"); 
+                    this.$router.push({ name: 'Home' }); 
+                })
+                .catch((error) => { 
+                    const message = error.response.data.message;
+                    this.$swal('Oh oo!', `${message}`, 'error'); 
+                });
+            }
+ 
         }, 
         clear() { 
             this.$refs.form.reset(); 
-        }, 
-    }, 
-}; 
+        }
+    }
+}
 </script>
 

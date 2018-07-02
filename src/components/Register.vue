@@ -36,15 +36,22 @@ import axios from 'axios';
 
 export default {
     data: () => ({
+        e1: false,
         valid: true,
-        name: '',
+        fullname: '',
         email: '',
         password: '',
         confirm_password: '',
+        fullnameRules: [
+            (v) => !!v || 'Fullname is required'
+        ],
         emailRules: [
             v => !!v || 'E-mail is required',
             v => /\S+@\S+\.\S+/.text(v) || 'E-mail must be valid',
         ],
+        passwordRules: [
+            (v) => !!v || 'Password is required'
+        ]
     }),
     methods: {
         async submit() {
@@ -54,24 +61,24 @@ export default {
                     // the axios method takes important parameters, such as
                     method: 'post',     // the request method
                     data: {             // the data parameters (payloads)
-                        name: this.name,
+                        fullname: this.name,
                         email: this.email,
                         password: this.password,
                     },
-                    url: 'http://localhost:8081/users/register', // url endpoint
+                    url: '/users/register', // url endpoint
                     headers: {
                         'Content-type': 'application/json',
                     },
                 })
                 // then it takes these parameters to then if server response is success
-                .then(() => {
+                .then((response) => {
                     this.$swal(
                         'Great!',
                         'You have been successfully registered!',
                         'success',
                     );
                     this.$router.push({
-                        name: 'Login'
+                        name: 'Home'
                     })
                 })
                 // or catch if failure (if user is not saved to database)
@@ -80,7 +87,6 @@ export default {
                     this.$swal('Oh no!', `${message}`, 'error');
                 });
             }
-            return true;
         },
         clear() {
             this.$refs.form.reset();
